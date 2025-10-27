@@ -1,0 +1,61 @@
+{% extends 'layouts/base.html.twig' %}
+
+{% block title %}FixFlow - Ticket Management System{% endblock %}
+
+{% block content %}
+    {% include 'components/hero.html.twig' %}
+
+    <main class="max-w-container mx-auto p-4 py-12 flex flex-col gap-3 text-center relative">
+        <div class="w-40 h-40 rounded-full bg-[#f2f2f2] absolute -z-10 left-0 top-10"></div>
+        <div class="w-40 h-40 rounded-full bg-[#f2f2f2] absolute -z-10 right-0 -bottom-10"></div>
+
+        <h2 class="text-3xl font-semibold font-roboto">
+            What <span class="text-neutral-700">We</span> Offer
+        </h2>
+        <p class="text-lg text-neutral-800 font-medium mb-4">
+            Things we offer to make your support pipeline frictionless
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 z-10">
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="ticket" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Smart Ticket Management</h3>
+                <p>Create, assign, and track tickets with intelligent automation and priority management.</p>
+            </div>
+
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Analytics Dashboard</h3>
+                <p>Real-time insights and performance metrics to optimize your support operations.</p>
+            </div>
+
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="users" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Team Collaboration</h3>
+                <p>Seamless communication and task assignment across your support team.</p>
+            </div>
+
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="shield" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Secure & Reliable</h3>
+                <p>Enterprise-grade security with 99.9% uptime guarantee for your peace of mind.</p>
+            </div>
+
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="zap" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Lightning Fast</h3>
+                <p>Optimized performance with instant ticket processing and real-time updates.</p>
+            </div>
+
+            <div class="p-5 border rounded-lg bg-white shadow-lg flex flex-col gap-3 items-center hover:scale-105 transition-transform duration-300">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+                <h3 class="font-medium text-lg font-roboto">Easy Integration</h3>
+                <p>Connect with your existing tools and platforms through our comprehensive API.</p>
+            </div>
+        </div>
+    </main>
+
+    {% include 'components/stats.html.twig' %}
+
+    {% include 'components/footer.html.twig' %}
+{% endblock %}
