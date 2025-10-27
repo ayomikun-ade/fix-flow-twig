@@ -129,7 +129,7 @@
                     </select>
                 </div>
             </div>
-            <div class="p-6 border-t border-border flex gap-2 justify-end">
+            <div class="p-6 flex gap-2 justify-end">
                 <button type="button" onclick="closeModal('createTicketModal')" class="inline-flex items-center justify-center px-4 py-2 font-medium bg-transparent text-foreground border border-border rounded-md hover:bg-accent transition-colors">
                     Cancel
                 </button>
@@ -140,6 +140,8 @@
         </form>
     </div>
 </div>
+{% include 'components/protected-footer.html.twig' %}
+
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay">
