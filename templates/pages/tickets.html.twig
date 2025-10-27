@@ -1,0 +1,245 @@
+{% extends 'layouts/base.html.twig' %}
+
+{% block title %}Tickets - FixFlow{% endblock %}
+
+{% block content %}
+<div class="flex flex-col max-w-container mx-auto px-4">
+    <figure class="absolute inset-0 -z-10">
+        <img src="/public/images/circle.svg" alt="Decorative background" class="w-full h-full object-cover">
+    </figure>
+
+    <main class="flex-1">
+        <div class="py-12">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="font-roboto text-3xl md:text-4xl font-bold mb-2">
+                        Ticket Management
+                    </h1>
+                    <p class="text-muted-foreground">
+                        Create, view, edit, and manage all your tickets in one place.
+                    </p>
+                </div>
+                <button onclick="openModal('createTicketModal')" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    Create Ticket
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <div class="relative max-w-md">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                    <input type="text" id="searchInput" class="w-full pl-10 px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Search tickets by title, description, or status..." onkeyup="searchTickets()">
+                </div>
+            </div>
+
+            {% if tickets|length == 0 %}
+            <div class="bg-white border border-border rounded-xl p-12 text-center shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="plus" class="w-8 h-8 text-primary-foreground"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">No tickets yet</h3>
+                <p class="text-muted-foreground mb-6">Get started by creating your first ticket</p>
+                <button onclick="openModal('createTicketModal')" class="inline-flex items-center justify-center gap-2 px-4 py-2 font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    Create Your First Ticket
+                </button>
+            </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="ticketsGrid">
+                {% for ticket in tickets %}
+                <div class="bg-white border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-transform duration-300 ticket-item" data-title="{{ ticket.title|lower }}" data-description="{{ ticket.description|default('')|lower }}" data-status="{{ ticket.status|lower }}">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-inter text-lg font-semibold flex-1">{{ ticket.title }}</h3>
+                    </div>
+
+                    {% if ticket.description %}
+                    <p class="text-muted-foreground text-sm mb-3">{{ ticket.description }}</p>
+                    {% endif %}
+
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-lg {% if ticket.status == 'open' %}bg-[#15803D] text-white{% elseif ticket.status == 'in_progress' %}bg-[#FACC15] text-white{% else %}bg-[#A1A1AA] text-white{% endif %}">
+                            {{ ticket.status|replace({'_': ' '})|title }}
+                        </span>
+                        {% if ticket.priority %}
+                        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-lg {% if ticket.priority == 'low' %}bg-muted text-muted-foreground{% elseif ticket.priority == 'medium' %}bg-blue-100 text-blue-800{% elseif ticket.priority == 'high' %}bg-orange-100 text-orange-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ ticket.priority|title }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs text-muted-foreground pt-3">
+                        <p class="flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> {{ ticket.updatedAt|date('M d, Y') }}</p>
+                        <div class="flex gap-2 text-sm">
+                            <button onclick="editTicket('{{ ticket.id }}')" class="inline-flex items-center gap-2 justify-center px-3 py-1.5 text-primary border border-border rounded-lg hover:bg-accent transition-colors">
+                                 <i data-lucide="edit" class="w-4 h-4 text-primary"></i>Edit
+                            </button>
+                            <button onclick="confirmDeleteTicket('{{ ticket.id }}')" class="inline-flex items-center gap-2 justify-center px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity">
+                                <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="noResults" class="hidden bg-white border border-border rounded-xl p-12 text-center">
+                <h3 class="text-xl font-semibold mb-2">No tickets found</h3>
+                <p class="text-muted-foreground">Try adjusting your search query</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<!-- Create/Edit Ticket Modal -->
+<div id="createTicketModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay">
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+        <div class="p-6">
+            <h3 class="font-roboto text-xl font-semibold" id="modalTitle">Create New Ticket</h3>
+        </div>
+        <form id="ticketForm" method="POST" action="/tickets/create">
+            <div class="px-6 space-y-4">
+                <input type="hidden" id="ticketId" name="ticketId" value="">
+
+                <div>
+                    <label for="title" class="block text-sm font-medium mb-2">Title</label>
+                    <input type="text" id="title" name="title" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Enter ticket title" required>
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="description" name="description" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring resize-vertical min-h-[80px]" placeholder="Enter ticket description"></textarea>
+                </div>
+
+                <div>
+                    <label for="status" class="block text-sm font-medium mb-2">Status</label>
+                    <select id="status" name="status" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" required>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="priority" class="block text-sm font-medium mb-2">Priority</label>
+                    <select id="priority" name="priority" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-6 border-t border-border flex gap-2 justify-end">
+                <button type="button" onclick="closeModal('createTicketModal')" class="inline-flex items-center justify-center px-4 py-2 font-medium bg-transparent text-foreground border border-border rounded-md hover:bg-accent transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                    Save Ticket
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay">
+    <div class="bg-white rounded-lg max-w-md w-full shadow-xl">
+        <div class="p-6">
+            <h3 class="font-roboto text-xl font-semibold">Are you sure?</h3>
+        </div>
+        <div class="px-6">
+            <p class="text-muted-foreground">This action cannot be undone. This will permanently delete the ticket.</p>
+        </div>
+        <div class="p-6 flex gap-2 justify-end">
+            <button type="button" onclick="closeModal('deleteModal')" class="inline-flex items-center justify-center px-4 py-2 font-medium bg-transparent text-foreground border border-border rounded-md hover:bg-accent transition-colors">
+                Cancel
+            </button>
+            <form id="deleteForm" method="POST" action="/tickets/delete" class="inline">
+                <input type="hidden" id="deleteTicketId" name="ticketId" value="">
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 font-medium bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-opacity">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search functionality
+function searchTickets() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const tickets = document.querySelectorAll('.ticket-item');
+    const grid = document.getElementById('ticketsGrid');
+    const noResults = document.getElementById('noResults');
+    let visibleCount = 0;
+
+    tickets.forEach(ticket => {
+        const title = ticket.getAttribute('data-title');
+        const description = ticket.getAttribute('data-description');
+        const status = ticket.getAttribute('data-status');
+
+        if (title.includes(query) || description.includes(query) || status.includes(query)) {
+            ticket.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            ticket.classList.add('hidden');
+        }
+    });
+
+    if (noResults) {
+        if (visibleCount === 0 && query !== '') {
+            grid.classList.add('hidden');
+            noResults.classList.remove('hidden');
+        } else {
+            grid.classList.remove('hidden');
+            noResults.classList.add('hidden');
+        }
+    }
+}
+
+// Edit ticket
+function editTicket(ticketId) {
+    fetch(`/tickets/get/${ticketId}`)
+        .then(response => response.json())
+        .then(ticket => {
+            document.getElementById('modalTitle').textContent = 'Edit Ticket';
+            document.getElementById('ticketForm').action = '/tickets/update';
+            document.getElementById('ticketId').value = ticket.id;
+            document.getElementById('title').value = ticket.title;
+            document.getElementById('description').value = ticket.description || '';
+            document.getElementById('status').value = ticket.status;
+            document.getElementById('priority').value = ticket.priority || 'medium';
+            openModal('createTicketModal');
+            // Reinitialize Lucide icons after DOM changes
+            setTimeout(() => lucide.createIcons(), 100);
+        });
+}
+
+// Reset form for creating new ticket
+function resetTicketForm() {
+    document.getElementById('modalTitle').textContent = 'Create New Ticket';
+    document.getElementById('ticketForm').action = '/tickets/create';
+    document.getElementById('ticketForm').reset();
+    document.getElementById('ticketId').value = '';
+}
+
+// Confirm delete
+function confirmDeleteTicket(ticketId) {
+    document.getElementById('deleteTicketId').value = ticketId;
+    openModal('deleteModal');
+}
+
+// Override openModal for create ticket to reset form
+const originalOpenModal = window.openModal;
+window.openModal = function(modalId) {
+    if (modalId === 'createTicketModal' && !document.getElementById('ticketId').value) {
+        resetTicketForm();
+    }
+    originalOpenModal(modalId);
+    // Reinitialize Lucide icons after modal opens
+    setTimeout(() => lucide.createIcons(), 100);
+};
+</script>
+{% endblock %}

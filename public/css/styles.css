@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700;800&display=swap");
 
 :root {
   --radius: 0.625rem;
@@ -55,14 +55,14 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background-color: var(--background);
   color: var(--foreground);
   line-height: 1.5;
 }
 
 .font-roboto {
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
 }
 
 /* Utility Classes */
@@ -276,7 +276,7 @@ body {
 }
 
 .navbar-logo h3 {
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
   font-weight: 700;
   font-size: 1.875rem;
 }
@@ -332,7 +332,7 @@ body {
 }
 
 .hero-title {
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
   font-size: 3rem;
   font-weight: 700;
   line-height: 1.2;
@@ -393,7 +393,7 @@ body {
 .features-title {
   font-size: 1.875rem;
   font-weight: 600;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
 }
 
 .features-description {
@@ -435,7 +435,7 @@ body {
 .feature-title {
   font-weight: 500;
   font-size: 1.125rem;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
 }
 
 .decoration-circle {
@@ -468,7 +468,7 @@ body {
 .stats-title {
   font-size: 1.875rem;
   font-weight: 600;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
   margin-bottom: 0.75rem;
 }
 
@@ -496,7 +496,7 @@ body {
 .stat-value {
   font-size: 2.25rem;
   font-weight: 700;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
   color: var(--primary);
 }
 
@@ -529,7 +529,7 @@ body {
 .footer-title {
   font-size: 1.125rem;
   font-weight: 600;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
   margin-bottom: 1rem;
 }
 
@@ -589,7 +589,7 @@ body {
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
 }
 
 .modal-body {
@@ -626,7 +626,7 @@ body {
 /* Alert/Toast */
 .toast {
   position: fixed;
-  top: 1rem;
+  bottom: 1rem;
   right: 1rem;
   background-color: var(--card);
   border: 1px solid var(--border);

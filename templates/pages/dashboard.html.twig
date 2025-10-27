@@ -1,0 +1,87 @@
+{% extends 'layouts/base.html.twig' %}
+
+{% block title %}Dashboard - FixFlow{% endblock %}
+
+{% block content %}
+<div class="flex flex-col max-w-container mx-auto px-4">
+    <figure class="absolute inset-0 -z-10">
+        <img src="/public/images/circle.svg" alt="Decorative background" class="w-full h-full object-cover">
+    </figure>
+
+    <main class="flex-1">
+        <div class="py-12">
+            <div class="mb-8">
+                <h1 class="font-roboto text-3xl md:text-4xl font-bold mb-2">
+                    Welcome back, {{ user.name }}!
+                </h1>
+                <p class="text-muted-foreground">
+                    Here's an overview of your ticket management system.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white border border-border rounded-xl p-6 shadow-sm transition-transform duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-muted-foreground text-sm mb-1">Total Tickets</p>
+                            <p class="font-roboto text-3xl font-bold">{{ stats.total }}</p>
+                        </div>
+                        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="ticket" class="w-5 h-5 text-white"></i></div>
+                    </div>
+                    <p class="text-muted-foreground text-xs mt-2">All tickets in the system</p>
+                </div>
+
+                <div class="bg-white border border-border rounded-xl p-6 shadow-sm transition-transform duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-muted-foreground text-sm mb-1">Open Tickets</p>
+                            <p class="font-roboto text-3xl font-bold">{{ stats.open }}</p>
+                        </div>
+                        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="clock" class="w-5 h-5 text-white"></i></div>
+                    </div>
+                    <p class="text-muted-foreground text-xs mt-2">Awaiting action</p>
+                </div>
+
+                <div class="bg-white border border-border rounded-xl p-6 shadow-sm transition-transform duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-muted-foreground text-sm mb-1">In Progress</p>
+                            <p class="font-roboto text-3xl font-bold">{{ stats.in_progress }}</p>
+                        </div>
+                        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5 text-white"></i></div>
+                    </div>
+                    <p class="text-muted-foreground text-xs mt-2">Currently being worked on</p>
+                </div>
+
+                <div class="bg-white border border-border rounded-xl p-6 shadow-sm transition-transform duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-muted-foreground text-sm mb-1">Closed Tickets</p>
+                            <p class="font-roboto text-3xl font-bold">{{ stats.closed }}</p>
+                        </div>
+                        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5 text-white"></i></div>
+                    </div>
+                    <p class="text-muted-foreground text-xs mt-2">Successfully resolved</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-border rounded-xl p-8 shadow-sm">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h2 class="font-roboto text-2xl font-semibold mb-2">
+                            Manage Your Tickets
+                        </h2>
+                        <p class="text-muted-foreground">
+                            Create, view, edit, and delete tickets with ease.
+                        </p>
+                    </div>
+                    <a href="/tickets" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                        Go to Tickets
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
