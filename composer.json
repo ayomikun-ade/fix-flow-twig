@@ -1,5 +1,11 @@
 {
-    "require": {
-        "twig/twig": "^3.21"
-    }
+  "require": {
+    "twig/twig": "^3.21"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "mkdir -p cache",
+      "chmod 755 cache"
+    ]
+  }
 }

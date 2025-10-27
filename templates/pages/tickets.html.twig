@@ -169,13 +169,40 @@
 
 {% block extra_js %}
 <script>
-// Search functionality
+// LocalStorage keys
+const STORAGE_KEYS = {
+    SEARCH_QUERY: 'fixflow_search_query',
+    DRAFT_TICKET: 'fixflow_draft_ticket'
+};
+
+// Initialize localStorage features on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore search query
+    restoreSearchQuery();
+
+    // Auto-save form data
+    setupAutoSave();
+
+    // Clear draft when form is submitted
+    const ticketForm = document.getElementById('ticketForm');
+    if (ticketForm) {
+        ticketForm.addEventListener('submit', function() {
+            clearDraft();
+        });
+    }
+});
+
+// Search functionality with localStorage persistence
 function searchTickets() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
+    const searchInput = document.getElementById('searchInput');
+    const query = searchInput.value.toLowerCase();
     const tickets = document.querySelectorAll('.ticket-item');
     const grid = document.getElementById('ticketsGrid');
     const noResults = document.getElementById('noResults');
     let visibleCount = 0;
+
+    // Save search query to localStorage
+    localStorage.setItem(STORAGE_KEYS.SEARCH_QUERY, searchInput.value);
 
     tickets.forEach(ticket => {
         const title = ticket.getAttribute('data-title');
@@ -199,6 +226,86 @@ function searchTickets() {
             noResults.classList.add('hidden');
         }
     }
+}
+
+// Restore search query from localStorage
+function restoreSearchQuery() {
+    const savedQuery = localStorage.getItem(STORAGE_KEYS.SEARCH_QUERY);
+    const searchInput = document.getElementById('searchInput');
+
+    if (savedQuery && searchInput) {
+        searchInput.value = savedQuery;
+        searchTickets();
+    }
+}
+
+// Auto-save draft ticket to localStorage
+function setupAutoSave() {
+    const formFields = ['title', 'description', 'status', 'priority'];
+
+    formFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', saveDraft);
+        }
+    });
+}
+
+// Save draft to localStorage
+function saveDraft() {
+    const ticketId = document.getElementById('ticketId').value;
+
+    // Only auto-save for new tickets, not edits
+    if (ticketId) return;
+
+    const draft = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        status: document.getElementById('status').value,
+        priority: document.getElementById('priority').value,
+        timestamp: new Date().toISOString()
+    };
+
+    // Only save if there's actual content
+    if (draft.title || draft.description) {
+        localStorage.setItem(STORAGE_KEYS.DRAFT_TICKET, JSON.stringify(draft));
+    }
+}
+
+// Restore draft from localStorage
+function restoreDraft() {
+    const savedDraft = localStorage.getItem(STORAGE_KEYS.DRAFT_TICKET);
+
+    if (savedDraft) {
+        try {
+            const draft = JSON.parse(savedDraft);
+
+            // Check if draft is less than 24 hours old
+            const draftAge = Date.now() - new Date(draft.timestamp).getTime();
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+
+            if (draftAge < twentyFourHours) {
+                document.getElementById('title').value = draft.title || '';
+                document.getElementById('description').value = draft.description || '';
+                document.getElementById('status').value = draft.status || 'open';
+                document.getElementById('priority').value = draft.priority || 'medium';
+
+                // Show notification
+                console.log('Draft restored from localStorage');
+            } else {
+                // Clear old draft
+                clearDraft();
+            }
+        } catch (e) {
+            console.error('Error restoring draft:', e);
+            clearDraft();
+        }
+    }
+}
+
+// Clear draft from localStorage
+function clearDraft() {
+    localStorage.removeItem(STORAGE_KEYS.DRAFT_TICKET);
 }
 
 // Edit ticket
@@ -225,6 +332,9 @@ function resetTicketForm() {
     document.getElementById('ticketForm').action = '/tickets/create';
     document.getElementById('ticketForm').reset();
     document.getElementById('ticketId').value = '';
+
+    // Try to restore draft
+    restoreDraft();
 }
 
 // Confirm delete

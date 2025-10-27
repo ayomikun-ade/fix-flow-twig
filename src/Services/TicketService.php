@@ -24,57 +24,10 @@ class TicketService
 
     private function initializeDemoTickets(): void
     {
+        // Demo tickets are no longer auto-created
+        // Users will create their own tickets
         if (!file_exists(self::TICKETS_FILE)) {
-            $demoTickets = [
-                new Ticket(
-                    'Login page not loading',
-                    'open',
-                    'Users are reporting that the login page is not loading properly on mobile devices.',
-                    'high',
-                    'ticket_1',
-                    date('Y-m-d H:i:s', strtotime('-2 days')),
-                    date('Y-m-d H:i:s', strtotime('-2 days'))
-                ),
-                new Ticket(
-                    'Add dark mode support',
-                    'in_progress',
-                    'Implement dark mode across the application for better user experience.',
-                    'medium',
-                    'ticket_2',
-                    date('Y-m-d H:i:s', strtotime('-5 days')),
-                    date('Y-m-d H:i:s', strtotime('-1 day'))
-                ),
-                new Ticket(
-                    'Password reset email not sent',
-                    'open',
-                    'Some users are not receiving password reset emails.',
-                    'urgent',
-                    'ticket_3',
-                    date('Y-m-d H:i:s', strtotime('-1 day')),
-                    date('Y-m-d H:i:s', strtotime('-1 day'))
-                ),
-                new Ticket(
-                    'Improve dashboard loading speed',
-                    'closed',
-                    'Dashboard is taking too long to load. Need to optimize queries.',
-                    'medium',
-                    'ticket_4',
-                    date('Y-m-d H:i:s', strtotime('-10 days')),
-                    date('Y-m-d H:i:s', strtotime('-3 days'))
-                ),
-                new Ticket(
-                    'Add export functionality',
-                    'open',
-                    'Users want to export ticket data to CSV/Excel.',
-                    'low',
-                    'ticket_5',
-                    date('Y-m-d H:i:s', strtotime('-7 days')),
-                    date('Y-m-d H:i:s', strtotime('-7 days'))
-                ),
-            ];
-
-            $tickets = array_map(fn($ticket) => $ticket->toArray(), $demoTickets);
-            $this->saveTickets($tickets);
+            $this->saveTickets([]);
         }
     }
 
@@ -93,17 +46,27 @@ class TicketService
         file_put_contents(self::TICKETS_FILE, json_encode($tickets, JSON_PRETTY_PRINT));
     }
 
-    public function getAllTickets(): array
+    public function getAllTickets(?string $userId = null): array
     {
-        return $this->getTickets();
+        $tickets = $this->getTickets();
+
+        if ($userId === null) {
+            return $tickets;
+        }
+
+        return array_filter($tickets, fn($ticket) => $ticket['userId'] === $userId);
     }
 
-    public function getTicketById(string $id): ?array
+    public function getTicketById(string $id, ?string $userId = null): ?array
     {
         $tickets = $this->getTickets();
 
         foreach ($tickets as $ticket) {
             if ($ticket['id'] === $id) {
+                // If userId is provided, verify ownership
+                if ($userId !== null && $ticket['userId'] !== $userId) {
+                    return null;
+                }
                 return $ticket;
             }
         }
@@ -111,13 +74,14 @@ class TicketService
         return null;
     }
 
-    public function createTicket(array $data): Ticket
+    public function createTicket(array $data, string $userId): Ticket
     {
         $tickets = $this->getTickets();
 
         $ticket = new Ticket(
             $data['title'],
             $data['status'],
+            $userId,
             $data['description'] ?? null,
             $data['priority'] ?? 'medium'
         );
@@ -128,19 +92,22 @@ class TicketService
         return $ticket;
     }
 
-    public function updateTicket(string $id, array $data): ?Ticket
+    public function updateTicket(string $id, array $data, string $userId): ?Ticket
     {
         $tickets = $this->getTickets();
-        $updated = false;
 
         foreach ($tickets as $index => $ticket) {
             if ($ticket['id'] === $id) {
+                // Verify ownership
+                if ($ticket['userId'] !== $userId) {
+                    return null;
+                }
+
                 $tickets[$index]['title'] = $data['title'] ?? $ticket['title'];
                 $tickets[$index]['description'] = $data['description'] ?? $ticket['description'];
                 $tickets[$index]['status'] = $data['status'] ?? $ticket['status'];
                 $tickets[$index]['priority'] = $data['priority'] ?? $ticket['priority'];
                 $tickets[$index]['updatedAt'] = date('Y-m-d H:i:s');
-                $updated = true;
 
                 $this->saveTickets($tickets);
                 return Ticket::fromArray($tickets[$index]);
@@ -150,14 +117,24 @@ class TicketService
         return null;
     }
 
-    public function deleteTicket(string $id): bool
+    public function deleteTicket(string $id, string $userId): bool
     {
         $tickets = $this->getTickets();
-        $initialCount = count($tickets);
+        $deleted = false;
 
-        $tickets = array_filter($tickets, fn($ticket) => $ticket['id'] !== $id);
+        foreach ($tickets as $index => $ticket) {
+            if ($ticket['id'] === $id) {
+                // Verify ownership
+                if ($ticket['userId'] !== $userId) {
+                    return false;
+                }
+                unset($tickets[$index]);
+                $deleted = true;
+                break;
+            }
+        }
 
-        if (count($tickets) < $initialCount) {
+        if ($deleted) {
             $this->saveTickets(array_values($tickets));
             return true;
         }
@@ -165,9 +142,9 @@ class TicketService
         return false;
     }
 
-    public function getTicketStats(): array
+    public function getTicketStats(?string $userId = null): array
     {
-        $tickets = $this->getTickets();
+        $tickets = $this->getAllTickets($userId);
 
         $stats = [
             'total' => count($tickets),
@@ -186,9 +163,9 @@ class TicketService
         return $stats;
     }
 
-    public function searchTickets(string $query): array
+    public function searchTickets(string $query, ?string $userId = null): array
     {
-        $tickets = $this->getTickets();
+        $tickets = $this->getAllTickets($userId);
 
         if (empty($query)) {
             return $tickets;

@@ -147,7 +147,8 @@ try {
                 exit;
             }
 
-            $stats = $ticketService->getTicketStats();
+            $currentUser = $authService->getCurrentUser();
+            $stats = $ticketService->getTicketStats($currentUser['id']);
             $templateVars['stats'] = $stats;
 
             echo $twig->render('pages/dashboard.html.twig', $templateVars);
@@ -160,7 +161,8 @@ try {
                 exit;
             }
 
-            $tickets = $ticketService->getAllTickets();
+            $currentUser = $authService->getCurrentUser();
+            $tickets = $ticketService->getAllTickets($currentUser['id']);
             $templateVars['tickets'] = $tickets;
 
             echo $twig->render('pages/tickets.html.twig', $templateVars);
@@ -174,8 +176,15 @@ try {
                 exit;
             }
 
+            $currentUser = $authService->getCurrentUser();
             $ticketId = $matches[1];
-            $ticket = $ticketService->getTicketById($ticketId);
+            $ticket = $ticketService->getTicketById($ticketId, $currentUser['id']);
+
+            if ($ticket === null) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied']);
+                exit;
+            }
 
             header('Content-Type: application/json');
             echo json_encode($ticket);
@@ -188,12 +197,13 @@ try {
                 exit;
             }
 
+            $currentUser = $authService->getCurrentUser();
             $ticketService->createTicket([
                 'title' => $_POST['title'],
                 'description' => $_POST['description'] ?? '',
                 'status' => $_POST['status'],
                 'priority' => $_POST['priority'] ?? 'medium',
-            ]);
+            ], $currentUser['id']);
 
             setFlash('Ticket created successfully', 'success');
             header('Location: /tickets');
@@ -206,14 +216,19 @@ try {
                 exit;
             }
 
-            $ticketService->updateTicket($_POST['ticketId'], [
+            $currentUser = $authService->getCurrentUser();
+            $result = $ticketService->updateTicket($_POST['ticketId'], [
                 'title' => $_POST['title'],
                 'description' => $_POST['description'] ?? '',
                 'status' => $_POST['status'],
                 'priority' => $_POST['priority'] ?? 'medium',
-            ]);
+            ], $currentUser['id']);
 
-            setFlash('Ticket updated successfully', 'success');
+            if ($result === null) {
+                setFlash('Access denied - you can only update your own tickets', 'error');
+            } else {
+                setFlash('Ticket updated successfully', 'success');
+            }
             header('Location: /tickets');
             exit;
 
@@ -224,9 +239,14 @@ try {
                 exit;
             }
 
-            $ticketService->deleteTicket($_POST['ticketId']);
+            $currentUser = $authService->getCurrentUser();
+            $result = $ticketService->deleteTicket($_POST['ticketId'], $currentUser['id']);
 
-            setFlash('Ticket deleted successfully', 'success');
+            if ($result) {
+                setFlash('Ticket deleted successfully', 'success');
+            } else {
+                setFlash('Access denied - you can only delete your own tickets', 'error');
+            }
             header('Location: /tickets');
             exit;
 

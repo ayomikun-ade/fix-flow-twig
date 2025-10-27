@@ -1,20 +1,32 @@
 [
-  {
-    "id": "1",
-    "title": "Create a FixFlow Account",
-    "description": "A FixFlow account needs to be created to access the ticketing system",
-    "status": "closed",
-    "priority": "high",
-    "createdAt": "2025-10-24 10:00:00",
-    "updatedAt": "2025-10-24 10:00:00"
-  },
-  {
-    "id": "2",
-    "title": "Create my first ticket",
-    "description": "Create a ticket to track an issue or task",
-    "status": "open",
-    "priority": "medium",
-    "createdAt": "2025-10-24 10:00:00",
-    "updatedAt": "2025-10-26 10:00:00"
-  }
+    {
+        "id": "1",
+        "title": "Create a FixFlow Account",
+        "description": "A FixFlow account needs to be created to access the ticketing system",
+        "status": "closed",
+        "priority": "high",
+        "userId": "user_68fe9c044c9bf5.69188071",
+        "createdAt": "2025-10-24 10:00:00",
+        "updatedAt": "2025-10-24 10:00:00"
+    },
+    {
+        "id": "2",
+        "title": "Create my first ticket",
+        "description": "Create a ticket to track an issue or task",
+        "status": "open",
+        "priority": "medium",
+        "userId": "user_68fe9c044c9bf5.69188071",
+        "createdAt": "2025-10-24 10:00:00",
+        "updatedAt": "2025-10-26 10:00:00"
+    },
+    {
+        "id": "ticket_68ff76f333d596.43886701",
+        "title": "Janet",
+        "description": "Janet dow",
+        "status": "closed",
+        "priority": "high",
+        "userId": "user_68fe9c044c9bf5.69188071",
+        "createdAt": "2025-10-27 14:43:15",
+        "updatedAt": "2025-10-27 14:43:15"
+    }
 ]
