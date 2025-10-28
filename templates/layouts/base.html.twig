@@ -9,8 +9,10 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Franken UI CSS -->
+    <!-- Franken UI -->
     <link rel="stylesheet" href="https://unpkg.com/franken-ui@1.1.0/dist/css/core.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/franken-ui@2.1.1/dist/css/utilities.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/franken-ui@2.1.1/dist/js/chart.iife.js" type="module"></script>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -75,12 +77,12 @@
     {% block content %}{% endblock %}
 
     {% if flash_message %}
-    <div class="fixed bottom-4 right-4 bg-white border rounded-lg p-4 shadow-lg z-50 animate-slide-in {% if flash_type == 'success' %}border-l-4 border-l-green-500{% else %}border-l-4 border-l-red-500{% endif %}" id="toast">
+    <div class="fixed bottom-4 right-4 bg-white text-sm border rounded-lg px-4 py-2 max-w-[320px] w-full shadow-lg z-50 animate-slide-in" id="toast">
         <div class="flex items-center gap-2">
             {% if flash_type == 'success' %}
-            <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+            <i data-lucide="circle-check" class="w-4 h-4"></i>
             {% else %}
-            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+            <i data-lucide="octagon-x" class="w-4 h-4"></i>
             {% endif %}
             <span>{{ flash_message }}</span>
         </div>
@@ -145,6 +147,9 @@
             }
         });
     </script>
+
+    <!-- Ticket Storage System -->
+    <script src="/public/js/ticket-storage.js"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

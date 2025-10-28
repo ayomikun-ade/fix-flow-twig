@@ -24,7 +24,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-muted-foreground text-sm mb-1">Total Tickets</p>
-                            <p class="font-roboto text-3xl font-bold">{{ stats.total }}</p>
+                            <p class="font-roboto text-3xl font-bold" id="statTotal">0</p>
                         </div>
                         <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="ticket" class="w-5 h-5 text-white"></i></div>
                     </div>
@@ -35,7 +35,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-muted-foreground text-sm mb-1">Open Tickets</p>
-                            <p class="font-roboto text-3xl font-bold">{{ stats.open }}</p>
+                            <p class="font-roboto text-3xl font-bold" id="statOpen">0</p>
                         </div>
                         <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="clock" class="w-5 h-5 text-white"></i></div>
                     </div>
@@ -46,7 +46,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-muted-foreground text-sm mb-1">In Progress</p>
-                            <p class="font-roboto text-3xl font-bold">{{ stats.in_progress }}</p>
+                            <p class="font-roboto text-3xl font-bold" id="statInProgress">0</p>
                         </div>
                         <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5 text-white"></i></div>
                     </div>
@@ -57,7 +57,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-muted-foreground text-sm mb-1">Closed Tickets</p>
-                            <p class="font-roboto text-3xl font-bold">{{ stats.closed }}</p>
+                            <p class="font-roboto text-3xl font-bold" id="statClosed">0</p>
                         </div>
                         <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="x-circle" class="w-5 h-5 text-white"></i></div>
                     </div>
@@ -81,8 +81,24 @@
                     </a>
                 </div>
             </div>
+
+            {% include 'components/chart.html.twig' %}
         </div>
     </main>
 </div>
 {% include 'components/protected-footer.html.twig' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load stats from localStorage on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const stats = getTicketStats();
+
+    document.getElementById('statTotal').textContent = stats.total;
+    document.getElementById('statOpen').textContent = stats.open;
+    document.getElementById('statInProgress').textContent = stats.in_progress;
+    document.getElementById('statClosed').textContent = stats.closed;
+});
+</script>
 {% endblock %}

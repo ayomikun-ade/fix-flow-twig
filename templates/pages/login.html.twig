@@ -3,12 +3,12 @@
 {% block title %}Login - FixFlow{% endblock %}
 
 {% block content %}
-<div class="flex min-h-[calc(100vh-68px)] items-center justify-center p-4 relative">
+<div class="flex min-h-[calc(100vh-68px)] items-center justify-center p-4">
     <figure class="absolute bottom-0 left-0 right-0 z-0">
         <img src="/public/images/wave.svg" alt="Decorative wave" class="w-full h-auto">
     </figure>
     <figure class="absolute inset-0 -z-10">
-        <img src="/public/images/circle.svg" alt="Decorative circle" class="w-full h-full object-cover">
+        <img src="/public/images/circle.svg" alt="Decorative circle" class="w-full h-full object-cover max-md:object-right">
     </figure>
 
     <div class="w-full max-w-md z-20">
@@ -17,7 +17,7 @@
             Back to home
         </a>
 
-        <div class="bg-white border border-border rounded-lg shadow-lg relative">
+        <div class="bg-white border border-border rounded-lg shadow-lg">
             <div class="w-40 h-40 rounded-full bg-[#f2f2f2] absolute -z-10 right-0 top-[14%]"></div>
 
             <div class="text-center p-6">
@@ -29,25 +29,35 @@
             </div>
 
             <div class="p-6">
-                <form method="POST" action="/login" class="space-y-4">
+                <form method="POST" action="/auth/login" id="loginForm" class="space-y-4" novalidate>
                     <div>
                         <label for="email" class="block text-sm font-medium mb-2">Email</label>
                         <input type="email" id="email" name="email" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" placeholder="you@example.com" required>
+                        <p class="text-red-500 text-xs mt-1 hidden" id="emailError"></p>
                     </div>
 
                     <div>
                         <label for="password" class="block text-sm font-medium mb-2">Password</label>
                         <input type="password" id="password" name="password" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" placeholder="••••••••" required>
+                        <p class="text-red-500 text-xs mt-1 hidden" id="passwordError"></p>
                     </div>
 
-                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
-                        Sign In
+                    <div id="formError" class="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm hidden"></div>
+
+                    <button type="submit" id="submitBtn" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                        <span id="submitText">Sign In</span>
+                        <span id="loadingSpinner" class="hidden">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
                     </button>
                 </form>
 
                 <div class="mt-6 text-center text-sm">
                     <span class="text-muted-foreground">Don't have an account? </span>
-                    <a href="/signup" class="text-primary hover:underline font-medium">Sign up</a>
+                    <a href="/auth/signup" class="text-primary hover:underline font-medium">Sign up</a>
                 </div>
 
                 <div class="mt-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
@@ -59,4 +69,118 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Check if already logged in via localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const session = localStorage.getItem('ticketapp_session');
+    if (session) {
+        try {
+            const sessionData = JSON.parse(session);
+            if (sessionData.user && sessionData.token) {
+                // Redirect to dashboard if session exists
+                window.location.href = '/dashboard';
+                return;
+            }
+        } catch (e) {
+            // Invalid session data, clear it
+            localStorage.removeItem('ticketapp_session');
+        }
+    }
+});
+
+// Form validation and submission
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Clear previous errors
+    document.getElementById('emailError').classList.add('hidden');
+    document.getElementById('passwordError').classList.add('hidden');
+    document.getElementById('formError').classList.add('hidden');
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    let hasError = false;
+
+    // Validate email
+    if (!email) {
+        showFieldError('emailError', 'Email is required');
+        hasError = true;
+    } else if (!isValidEmail(email)) {
+        showFieldError('emailError', 'Please enter a valid email address');
+        hasError = true;
+    }
+
+    // Validate password
+    if (!password) {
+        showFieldError('passwordError', 'Password is required');
+        hasError = true;
+    }
+
+    if (hasError) {
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    submitBtn.disabled = true;
+    submitText.classList.add('hidden');
+    loadingSpinner.classList.remove('hidden');
+
+    // Submit form via AJAX
+    const formData = new FormData(this);
+
+    fetch('/auth/login', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Store session in localStorage
+            localStorage.setItem('ticketapp_session', JSON.stringify(data.session));
+
+            // Show success message and redirect
+            window.location.href = data.redirect;
+        } else {
+            throw new Error(data.error || 'Login failed');
+        }
+    })
+    .catch(error => {
+        // Show error
+        showFormError(error.message || 'Failed to log in. Please try again.');
+
+        // Reset button state
+        submitBtn.disabled = false;
+        submitText.classList.remove('hidden');
+        loadingSpinner.classList.add('hidden');
+    });
+});
+
+function showFieldError(fieldId, message) {
+    const errorElement = document.getElementById(fieldId);
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
+
+function showFormError(message) {
+    const formError = document.getElementById('formError');
+    formError.textContent = message;
+    formError.classList.remove('hidden');
+}
+
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+</script>
 {% endblock %}

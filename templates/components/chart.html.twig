@@ -1,0 +1,116 @@
+<div class="uk-chart-container max-w-md mx-auto bg-white border border-border rounded-lg shadow mt-12">
+  <div class="p-4">
+    <div class="uk-card-title text-lg font-roboto">Ticket Analysis</div>
+    <div class="uk-text-sm text-sm mt-1 font-inter">Summary of user tickets</div>
+  </div>
+
+  <div class="px-4" id="chartContainer"></div>
+
+  <div class="p-4">
+    <div class="text-muted-foreground mt-2 leading-none">
+      Showing your total tickets across all statuses
+    </div>
+  </div>
+</div>
+
+<script>
+// Create chart with actual data from localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    // Get actual stats
+    const stats = getTicketStats();
+
+    console.log('Loading chart with stats:', stats);
+
+    // Create the chart element with actual data
+    const chartContainer = document.getElementById('chartContainer');
+
+    const chartElement = document.createElement('uk-chart');
+    chartElement.id = 'ticketChart';
+    chartElement.className = 'font-inter';
+    chartElement.style.height = '300px';
+
+    const chartConfig = {
+        series: [
+            {
+                name: "Tickets",
+                data: [stats.open, stats.in_progress, stats.closed]
+            }
+        ],
+        chart: {
+            type: "bar",
+            fontFamily: "Inter, sans-serif",
+            zoom: {
+                enabled: false
+            },
+            toolbar: {
+                show: false
+            }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 8,
+                borderRadiusApplication: "end",
+                columnWidth: "60%"
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: "smooth",
+            width: 2
+        },
+        colors: ["#000000"],
+        grid: {
+            row: {
+                colors: []
+            },
+            borderColor: "hsl(var(--border) / var(--border-alpha, 1))"
+        },
+        xaxis: {
+            categories: ["Open", "In Progress", "Closed"],
+            tooltip: {
+                enabled: false
+            },
+            labels: {
+                style: {
+                    colors: "hsl(var(--muted-foreground))",
+                    fontFamily: "Inter, sans-serif"
+                }
+            },
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false
+            }
+        },
+        yaxis: {
+            labels: {
+                show: true,
+                style: {
+                    fontFamily: "Inter, sans-serif"
+                }
+            }
+        },
+        tooltip: {
+            title: {
+                show: false
+            },
+            style: {
+                fontFamily: "Inter, sans-serif"
+            }
+        }
+    };
+
+    // Create script element with JSON config
+    const scriptElement = document.createElement('script');
+    scriptElement.type = 'application/json';
+    scriptElement.textContent = JSON.stringify(chartConfig);
+
+    chartElement.appendChild(scriptElement);
+    chartContainer.appendChild(chartElement);
+
+    console.log('Chart created with data:', chartConfig.series[0].data);
+});
+</script>

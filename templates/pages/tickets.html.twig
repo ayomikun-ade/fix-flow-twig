@@ -32,8 +32,7 @@
                 </div>
             </div>
 
-            {% if tickets|length == 0 %}
-            <div class="bg-white border border-border rounded-xl p-12 text-center shadow-sm">
+            <div id="emptyState" class="hidden bg-white border border-border rounded-xl p-12 text-center shadow-sm">
                 <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="plus" class="w-8 h-8 text-primary-foreground"></i>
                 </div>
@@ -44,48 +43,13 @@
                     Create Your First Ticket
                 </button>
             </div>
-            {% else %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="ticketsGrid">
-                {% for ticket in tickets %}
-                <div class="bg-white border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-transform duration-300 ticket-item" data-title="{{ ticket.title|lower }}" data-description="{{ ticket.description|default('')|lower }}" data-status="{{ ticket.status|lower }}">
-                    <div class="flex justify-between items-start mb-3">
-                        <h3 class="font-inter text-lg font-semibold flex-1">{{ ticket.title }}</h3>
-                    </div>
 
-                    {% if ticket.description %}
-                    <p class="text-muted-foreground text-sm mb-3">{{ ticket.description }}</p>
-                    {% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="ticketsGrid"></div>
 
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-lg {% if ticket.status == 'open' %}bg-[#15803D] text-white{% elseif ticket.status == 'in_progress' %}bg-[#FACC15] text-white{% else %}bg-[#A1A1AA] text-white{% endif %}">
-                            {{ ticket.status|replace({'_': ' '})|title }}
-                        </span>
-                        {% if ticket.priority %}
-                        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-lg {% if ticket.priority == 'low' %}bg-muted text-muted-foreground{% elseif ticket.priority == 'medium' %}bg-blue-100 text-blue-800{% elseif ticket.priority == 'high' %}bg-orange-100 text-orange-800{% else %}bg-red-100 text-red-800{% endif %}">
-                            {{ ticket.priority|title }}
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <div class="flex justify-between items-center text-xs text-muted-foreground pt-3">
-                        <p class="flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> {{ ticket.updatedAt|date('M d, Y') }}</p>
-                        <div class="flex gap-2 text-sm">
-                            <button onclick="editTicket('{{ ticket.id }}')" class="inline-flex items-center gap-2 justify-center px-3 py-1.5 text-primary border border-border rounded-lg hover:bg-accent transition-colors">
-                                 <i data-lucide="edit" class="w-4 h-4 text-primary"></i>Edit
-                            </button>
-                            <button onclick="confirmDeleteTicket('{{ ticket.id }}')" class="inline-flex items-center gap-2 justify-center px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity">
-                                <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
             <div id="noResults" class="hidden bg-white border border-border rounded-xl p-12 text-center">
                 <h3 class="text-xl font-semibold mb-2">No tickets found</h3>
                 <p class="text-muted-foreground">Try adjusting your search query</p>
             </div>
-            {% endif %}
         </div>
     </main>
 </div>
@@ -96,31 +60,36 @@
         <div class="p-6">
             <h3 class="font-roboto text-xl font-semibold" id="modalTitle">Create New Ticket</h3>
         </div>
-        <form id="ticketForm" method="POST" action="/tickets/create">
+        <form id="ticketForm" method="POST" action="/tickets/create" novalidate>
             <div class="px-6 space-y-4">
                 <input type="hidden" id="ticketId" name="ticketId" value="">
 
                 <div>
-                    <label for="title" class="block text-sm font-medium mb-2">Title</label>
+                    <label for="title" class="block text-sm font-medium mb-2">Title <span class="text-red-500">*</span></label>
                     <input type="text" id="title" name="title" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Enter ticket title" required>
+                    <p class="text-red-500 text-xs mt-1 hidden" id="titleError"></p>
                 </div>
 
                 <div>
-                    <label for="description" class="block text-sm font-medium mb-2">Description</label>
-                    <textarea id="description" name="description" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring resize-vertical min-h-[80px]" placeholder="Enter ticket description"></textarea>
+                    <label for="description" class="block text-sm font-medium mb-2">Description (optional)</label>
+                    <textarea id="description" name="description" maxlength="500" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring resize-vertical min-h-[80px]" placeholder="Enter ticket description"></textarea>
+                    <p class="text-muted-foreground text-xs mt-1">Maximum 500 characters</p>
+                    <p class="text-red-500 text-xs mt-1 hidden" id="descriptionError"></p>
                 </div>
 
                 <div>
-                    <label for="status" class="block text-sm font-medium mb-2">Status</label>
+                    <label for="status" class="block text-sm font-medium mb-2">Status <span class="text-red-500">*</span></label>
                     <select id="status" name="status" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring" required>
+                        <option value="">Select status</option>
                         <option value="open">Open</option>
                         <option value="in_progress">In Progress</option>
                         <option value="closed">Closed</option>
                     </select>
+                    <p class="text-red-500 text-xs mt-1 hidden" id="statusError"></p>
                 </div>
 
                 <div>
-                    <label for="priority" class="block text-sm font-medium mb-2">Priority</label>
+                    <label for="priority" class="block text-sm font-medium mb-2">Priority (optional)</label>
                     <select id="priority" name="priority" class="w-full px-3 py-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring">
                         <option value="low">Low</option>
                         <option value="medium" selected>Medium</option>
@@ -140,7 +109,7 @@
         </form>
     </div>
 </div>
-{% include 'components/protected-footer.html.twig' %}
+<div class="md:absolute right-0 left-0 bottom-0">{% include 'components/protected-footer.html.twig' %}</div>
 
 
 <!-- Delete Confirmation Modal -->
@@ -168,190 +137,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// LocalStorage keys
-const STORAGE_KEYS = {
-    SEARCH_QUERY: 'fixflow_search_query',
-    DRAFT_TICKET: 'fixflow_draft_ticket'
-};
-
-// Initialize localStorage features on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Restore search query
-    restoreSearchQuery();
-
-    // Auto-save form data
-    setupAutoSave();
-
-    // Clear draft when form is submitted
-    const ticketForm = document.getElementById('ticketForm');
-    if (ticketForm) {
-        ticketForm.addEventListener('submit', function() {
-            clearDraft();
-        });
-    }
-});
-
-// Search functionality with localStorage persistence
-function searchTickets() {
-    const searchInput = document.getElementById('searchInput');
-    const query = searchInput.value.toLowerCase();
-    const tickets = document.querySelectorAll('.ticket-item');
-    const grid = document.getElementById('ticketsGrid');
-    const noResults = document.getElementById('noResults');
-    let visibleCount = 0;
-
-    // Save search query to localStorage
-    localStorage.setItem(STORAGE_KEYS.SEARCH_QUERY, searchInput.value);
-
-    tickets.forEach(ticket => {
-        const title = ticket.getAttribute('data-title');
-        const description = ticket.getAttribute('data-description');
-        const status = ticket.getAttribute('data-status');
-
-        if (title.includes(query) || description.includes(query) || status.includes(query)) {
-            ticket.classList.remove('hidden');
-            visibleCount++;
-        } else {
-            ticket.classList.add('hidden');
-        }
-    });
-
-    if (noResults) {
-        if (visibleCount === 0 && query !== '') {
-            grid.classList.add('hidden');
-            noResults.classList.remove('hidden');
-        } else {
-            grid.classList.remove('hidden');
-            noResults.classList.add('hidden');
-        }
-    }
-}
-
-// Restore search query from localStorage
-function restoreSearchQuery() {
-    const savedQuery = localStorage.getItem(STORAGE_KEYS.SEARCH_QUERY);
-    const searchInput = document.getElementById('searchInput');
-
-    if (savedQuery && searchInput) {
-        searchInput.value = savedQuery;
-        searchTickets();
-    }
-}
-
-// Auto-save draft ticket to localStorage
-function setupAutoSave() {
-    const formFields = ['title', 'description', 'status', 'priority'];
-
-    formFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.addEventListener('input', saveDraft);
-        }
-    });
-}
-
-// Save draft to localStorage
-function saveDraft() {
-    const ticketId = document.getElementById('ticketId').value;
-
-    // Only auto-save for new tickets, not edits
-    if (ticketId) return;
-
-    const draft = {
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        status: document.getElementById('status').value,
-        priority: document.getElementById('priority').value,
-        timestamp: new Date().toISOString()
-    };
-
-    // Only save if there's actual content
-    if (draft.title || draft.description) {
-        localStorage.setItem(STORAGE_KEYS.DRAFT_TICKET, JSON.stringify(draft));
-    }
-}
-
-// Restore draft from localStorage
-function restoreDraft() {
-    const savedDraft = localStorage.getItem(STORAGE_KEYS.DRAFT_TICKET);
-
-    if (savedDraft) {
-        try {
-            const draft = JSON.parse(savedDraft);
-
-            // Check if draft is less than 24 hours old
-            const draftAge = Date.now() - new Date(draft.timestamp).getTime();
-            const twentyFourHours = 24 * 60 * 60 * 1000;
-
-            if (draftAge < twentyFourHours) {
-                document.getElementById('title').value = draft.title || '';
-                document.getElementById('description').value = draft.description || '';
-                document.getElementById('status').value = draft.status || 'open';
-                document.getElementById('priority').value = draft.priority || 'medium';
-
-                // Show notification
-                console.log('Draft restored from localStorage');
-            } else {
-                // Clear old draft
-                clearDraft();
-            }
-        } catch (e) {
-            console.error('Error restoring draft:', e);
-            clearDraft();
-        }
-    }
-}
-
-// Clear draft from localStorage
-function clearDraft() {
-    localStorage.removeItem(STORAGE_KEYS.DRAFT_TICKET);
-}
-
-// Edit ticket
-function editTicket(ticketId) {
-    fetch(`/tickets/get/${ticketId}`)
-        .then(response => response.json())
-        .then(ticket => {
-            document.getElementById('modalTitle').textContent = 'Edit Ticket';
-            document.getElementById('ticketForm').action = '/tickets/update';
-            document.getElementById('ticketId').value = ticket.id;
-            document.getElementById('title').value = ticket.title;
-            document.getElementById('description').value = ticket.description || '';
-            document.getElementById('status').value = ticket.status;
-            document.getElementById('priority').value = ticket.priority || 'medium';
-            openModal('createTicketModal');
-            // Reinitialize Lucide icons after DOM changes
-            setTimeout(() => lucide.createIcons(), 100);
-        });
-}
-
-// Reset form for creating new ticket
-function resetTicketForm() {
-    document.getElementById('modalTitle').textContent = 'Create New Ticket';
-    document.getElementById('ticketForm').action = '/tickets/create';
-    document.getElementById('ticketForm').reset();
-    document.getElementById('ticketId').value = '';
-
-    // Try to restore draft
-    restoreDraft();
-}
-
-// Confirm delete
-function confirmDeleteTicket(ticketId) {
-    document.getElementById('deleteTicketId').value = ticketId;
-    openModal('deleteModal');
-}
-
-// Override openModal for create ticket to reset form
-const originalOpenModal = window.openModal;
-window.openModal = function(modalId) {
-    if (modalId === 'createTicketModal' && !document.getElementById('ticketId').value) {
-        resetTicketForm();
-    }
-    originalOpenModal(modalId);
-    // Reinitialize Lucide icons after modal opens
-    setTimeout(() => lucide.createIcons(), 100);
-};
-</script>
+<script src="/public/js/tickets-page.js"></script>
 {% endblock %}

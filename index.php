@@ -81,7 +81,7 @@ try {
             break;
 
         // Login page (GET)
-        case $path === '/login' && $method === 'GET':
+        case $path === '/auth/login' && $method === 'GET':
             if ($authService->isAuthenticated()) {
                 header('Location: /dashboard');
                 exit;
@@ -89,25 +89,63 @@ try {
             echo $twig->render('pages/login.html.twig', $templateVars);
             break;
 
-        // Login action (POST)
-        case $path === '/login' && $method === 'POST':
+        // Login action (POST) - API style response for localStorage
+        case $path === '/auth/login' && $method === 'POST':
+            // Check if it's an AJAX request
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
+
+            // Validation
+            if (empty($email) || empty($password)) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Email and password are required']);
+                    exit;
+                } else {
+                    setFlash('Email and password are required', 'error');
+                    header('Location: /auth/login');
+                    exit;
+                }
+            }
 
             $user = $authService->login($email, $password);
 
             if ($user) {
-                $authService->createSession($user);
-                setFlash('Welcome back!', 'success');
-                header('Location: /dashboard');
+                $sessionData = $authService->createSession($user);
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Welcome back!',
+                        'session' => $sessionData,
+                        'redirect' => '/dashboard'
+                    ]);
+                    exit;
+                } else {
+                    setFlash('Welcome back!', 'success');
+                    header('Location: /dashboard');
+                    exit;
+                }
             } else {
-                setFlash('Invalid email or password', 'error');
-                header('Location: /login');
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    http_response_code(401);
+                    echo json_encode(['error' => 'Invalid email or password']);
+                    exit;
+                } else {
+                    setFlash('Invalid email or password', 'error');
+                    header('Location: /auth/login');
+                    exit;
+                }
             }
-            exit;
 
         // Signup page (GET)
-        case $path === '/signup' && $method === 'GET':
+        case $path === '/auth/signup' && $method === 'GET':
             if ($authService->isAuthenticated()) {
                 header('Location: /dashboard');
                 exit;
@@ -115,41 +153,88 @@ try {
             echo $twig->render('pages/signup.html.twig', $templateVars);
             break;
 
-        // Signup action (POST)
-        case $path === '/signup' && $method === 'POST':
+        // Signup action (POST) - API style response for localStorage
+        case $path === '/auth/signup' && $method === 'POST':
+            // Check if it's an AJAX request
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
             $name = $_POST['name'] ?? '';
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
+            // Validation
+            $errors = [];
+            if (empty($name)) $errors[] = 'Name is required';
+            if (empty($email)) $errors[] = 'Email is required';
+            if (empty($password)) $errors[] = 'Password is required';
+            if (!empty($password) && strlen($password) < 6) $errors[] = 'Password must be at least 6 characters';
+
+            if (!empty($errors)) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    http_response_code(400);
+                    echo json_encode(['error' => implode(', ', $errors)]);
+                    exit;
+                } else {
+                    setFlash(implode(', ', $errors), 'error');
+                    header('Location: /auth/signup');
+                    exit;
+                }
+            }
+
             $user = $authService->signup($email, $name, $password);
 
             if ($user) {
-                $authService->createSession($user);
-                setFlash('Account created successfully!', 'success');
-                header('Location: /dashboard');
+                $sessionData = $authService->createSession($user);
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Account created successfully!',
+                        'session' => $sessionData,
+                        'redirect' => '/dashboard'
+                    ]);
+                    exit;
+                } else {
+                    setFlash('Account created successfully!', 'success');
+                    header('Location: /dashboard');
+                    exit;
+                }
             } else {
-                setFlash('Email already exists', 'error');
-                header('Location: /signup');
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    http_response_code(409);
+                    echo json_encode(['error' => 'Email already exists']);
+                    exit;
+                } else {
+                    setFlash('Email already exists', 'error');
+                    header('Location: /auth/signup');
+                    exit;
+                }
             }
-            exit;
 
         // Logout
         case $path === '/logout':
             $authService->logout();
-            setFlash('Logged out successfully', 'success');
-            header('Location: /');
+            echo '<script>
+                localStorage.removeItem("ticketapp_session");
+                window.location.href = "/";
+            </script>';
             exit;
 
         // Dashboard
         case $path === '/dashboard':
             if (!$authService->isAuthenticated()) {
-                header('Location: /login');
+                setFlash('Your session has expired — please log in again.', 'error');
+                header('Location: /auth/login');
                 exit;
             }
 
             $currentUser = $authService->getCurrentUser();
-            $stats = $ticketService->getTicketStats($currentUser['id']);
-            $templateVars['stats'] = $stats;
+            // Stats will be computed from localStorage on client-side
+            $templateVars['stats'] = ['total' => 0, 'open' => 0, 'in_progress' => 0, 'closed' => 0];
 
             echo $twig->render('pages/dashboard.html.twig', $templateVars);
             break;
@@ -157,97 +242,171 @@ try {
         // Tickets page
         case $path === '/tickets':
             if (!$authService->isAuthenticated()) {
-                header('Location: /login');
+                setFlash('Unauthorized access — please log in.', 'error');
+                header('Location: /auth/login');
                 exit;
             }
 
             $currentUser = $authService->getCurrentUser();
-            $tickets = $ticketService->getAllTickets($currentUser['id']);
-            $templateVars['tickets'] = $tickets;
+            // Tickets will be loaded from localStorage on client-side
+            $templateVars['tickets'] = [];
 
             echo $twig->render('pages/tickets.html.twig', $templateVars);
             break;
 
-        // Get single ticket (AJAX)
+        // Get single ticket (AJAX) - Now handled client-side via localStorage
         case preg_match('#^/tickets/get/(.+)$#', $path, $matches):
             if (!$authService->isAuthenticated()) {
                 http_response_code(401);
-                echo json_encode(['error' => 'Unauthorized']);
+                echo json_encode(['error' => 'Unauthorized access — please log in']);
                 exit;
             }
 
-            $currentUser = $authService->getCurrentUser();
-            $ticketId = $matches[1];
-            $ticket = $ticketService->getTicketById($ticketId, $currentUser['id']);
-
-            if ($ticket === null) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Access denied']);
-                exit;
-            }
-
+            // Return success - actual data comes from localStorage
             header('Content-Type: application/json');
-            echo json_encode($ticket);
+            echo json_encode(['success' => true, 'message' => 'Use localStorage']);
             exit;
 
-        // Create ticket
+        // Create ticket - Validation only, storage in localStorage
         case $path === '/tickets/create' && $method === 'POST':
             if (!$authService->isAuthenticated()) {
-                header('Location: /login');
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized access — please log in']);
                 exit;
             }
 
-            $currentUser = $authService->getCurrentUser();
-            $ticketService->createTicket([
-                'title' => $_POST['title'],
-                'description' => $_POST['description'] ?? '',
-                'status' => $_POST['status'],
-                'priority' => $_POST['priority'] ?? 'medium',
-            ], $currentUser['id']);
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
-            setFlash('Ticket created successfully', 'success');
-            header('Location: /tickets');
+            $currentUser = $authService->getCurrentUser();
+
+            // Validate required fields
+            $title = trim($_POST['title'] ?? '');
+            $status = $_POST['status'] ?? '';
+            $description = trim($_POST['description'] ?? '');
+            $priority = $_POST['priority'] ?? 'medium';
+
+            $errors = [];
+
+            // Validate title (mandatory)
+            if (empty($title)) {
+                $errors[] = 'Title is required';
+            }
+
+            // Validate status (mandatory and must be valid value)
+            $validStatuses = ['open', 'in_progress', 'closed'];
+            if (empty($status)) {
+                $errors[] = 'Status is required';
+            } elseif (!in_array($status, $validStatuses)) {
+                $errors[] = 'Status must be one of: open, in_progress, closed';
+            }
+
+            // Validate description length (optional but with constraints)
+            if (!empty($description) && strlen($description) > 500) {
+                $errors[] = 'Description must not exceed 500 characters';
+            }
+
+            if (!empty($errors)) {
+                if ($isAjax) {
+                    http_response_code(400);
+                    echo json_encode(['error' => implode('. ', $errors)]);
+                } else {
+                    setFlash(implode('. ', $errors), 'error');
+                    header('Location: /tickets');
+                }
+                exit;
+            }
+
+            // Validation passed - client will handle localStorage storage
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Ticket created successfully']);
+            } else {
+                setFlash('Ticket created successfully', 'success');
+                header('Location: /tickets');
+            }
             exit;
 
-        // Update ticket
+        // Update ticket - Validation only, storage in localStorage
         case $path === '/tickets/update' && $method === 'POST':
             if (!$authService->isAuthenticated()) {
-                header('Location: /login');
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized access — please log in']);
                 exit;
             }
 
-            $currentUser = $authService->getCurrentUser();
-            $result = $ticketService->updateTicket($_POST['ticketId'], [
-                'title' => $_POST['title'],
-                'description' => $_POST['description'] ?? '',
-                'status' => $_POST['status'],
-                'priority' => $_POST['priority'] ?? 'medium',
-            ], $currentUser['id']);
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
-            if ($result === null) {
-                setFlash('Access denied - you can only update your own tickets', 'error');
+            $currentUser = $authService->getCurrentUser();
+
+            // Validate required fields
+            $ticketId = $_POST['ticketId'] ?? '';
+            $title = trim($_POST['title'] ?? '');
+            $status = $_POST['status'] ?? '';
+            $description = trim($_POST['description'] ?? '');
+            $priority = $_POST['priority'] ?? 'medium';
+
+            $errors = [];
+
+            // Validate title (mandatory)
+            if (empty($title)) {
+                $errors[] = 'Title is required';
+            }
+
+            // Validate status (mandatory and must be valid value)
+            $validStatuses = ['open', 'in_progress', 'closed'];
+            if (empty($status)) {
+                $errors[] = 'Status is required';
+            } elseif (!in_array($status, $validStatuses)) {
+                $errors[] = 'Status must be one of: open, in_progress, closed';
+            }
+
+            // Validate description length (optional but with constraints)
+            if (!empty($description) && strlen($description) > 500) {
+                $errors[] = 'Description must not exceed 500 characters';
+            }
+
+            if (!empty($errors)) {
+                if ($isAjax) {
+                    http_response_code(400);
+                    echo json_encode(['error' => implode('. ', $errors)]);
+                } else {
+                    setFlash(implode('. ', $errors), 'error');
+                    header('Location: /tickets');
+                }
+                exit;
+            }
+
+            // Validation passed - client will handle localStorage storage
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Ticket updated successfully']);
             } else {
                 setFlash('Ticket updated successfully', 'success');
+                header('Location: /tickets');
             }
-            header('Location: /tickets');
             exit;
 
-        // Delete ticket
+        // Delete ticket - Handled in localStorage
         case $path === '/tickets/delete' && $method === 'POST':
             if (!$authService->isAuthenticated()) {
-                header('Location: /login');
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized access — please log in']);
                 exit;
             }
 
-            $currentUser = $authService->getCurrentUser();
-            $result = $ticketService->deleteTicket($_POST['ticketId'], $currentUser['id']);
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
-            if ($result) {
-                setFlash('Ticket deleted successfully', 'success');
+            // Validation passed - client will handle localStorage storage
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Ticket deleted successfully']);
             } else {
-                setFlash('Access denied - you can only delete your own tickets', 'error');
+                setFlash('Ticket deleted successfully', 'success');
+                header('Location: /tickets');
             }
-            header('Location: /tickets');
             exit;
 
         // 404 Not Found

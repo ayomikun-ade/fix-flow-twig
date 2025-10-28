@@ -94,16 +94,50 @@ class AuthService
         return null;
     }
 
-    public function createSession(User $user): string
+    public function createSession(User $user): array
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
-        $_SESSION['user'] = $user->toPublicArray();
-        $_SESSION['token'] = bin2hex(random_bytes(32));
+        $token = bin2hex(random_bytes(32));
+        $sessionData = [
+            'user' => $user->toPublicArray(),
+            'token' => $token,
+            'timestamp' => time()
+        ];
 
-        return $_SESSION['token'];
+        $_SESSION['user'] = $sessionData['user'];
+        $_SESSION['token'] = $token;
+
+        return $sessionData;
+    }
+
+    public function validateSession(array $sessionData): bool
+    {
+        if (!isset($sessionData['user']) || !isset($sessionData['token'])) {
+            return false;
+        }
+
+        // Validate user exists
+        $users = $this->getUsers();
+        foreach ($users as $user) {
+            if ($user['id'] === $sessionData['user']['id'] && $user['email'] === $sessionData['user']['email']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function restoreSession(array $sessionData): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $_SESSION['user'] = $sessionData['user'];
+        $_SESSION['token'] = $sessionData['token'];
     }
 
     public function isAuthenticated(): bool
